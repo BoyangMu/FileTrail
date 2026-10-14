@@ -1,0 +1,46 @@
+{
+  "measured_at": "2026-09-15T18:33:41.475832+00:00",
+  "os": "macOS-26.6.2-arm64-arm-64bit",
+  "architecture": "arm64",
+  "hardware": "Apple M1 Max; host RAM 32 GiB; Docker resource allocation not measured",
+  "environment": "Docker Desktop 29.4.0; Nginx; Spring Boot 3.5.16 / Java 21; PostgreSQL 17.11; MinIO S3; Docker volumes on local disk",
+  "base_url": "http://127.0.0.1:4173",
+  "network": "loopback on the same development machine",
+  "file_mib": 16,
+  "iterations": 3,
+  "concurrency": 1,
+  "part_mib": 4,
+  "runs": [
+    {
+      "upload_seconds": 0.3331,
+      "publish_seconds": 0.1598,
+      "upload_and_publish_mib_per_second": 32.46,
+      "download_seconds": 0.1314,
+      "sha256_verified": true
+    },
+    {
+      "upload_seconds": 0.2968,
+      "publish_seconds": 0.1021,
+      "upload_and_publish_mib_per_second": 40.1,
+      "download_seconds": 0.1118,
+      "sha256_verified": true
+    },
+    {
+      "upload_seconds": 0.2804,
+      "publish_seconds": 0.1021,
+      "upload_and_publish_mib_per_second": 41.82,
+      "download_seconds": 0.1141,
+      "sha256_verified": true
+    }
+  ],
+  "request_samples": 18,
+  "request_p50_ms": 70.76,
+  "request_p95_ms": 159.73,
+  "limits": [
+    "Small sequential baseline; not a capacity, load, or durability guarantee.",
+    "Request samples mix create/part/complete endpoints; not endpoint-specific percentiles.",
+    "Client hashing and test-data generation are excluded from upload timing.",
+    "API memory, storage IOPS and multi-device sync latency are not measured."
+  ],
+  "background_workload": "The browser acceptance suite was running concurrently. The desktop and Docker resource allocation were not isolated."
+}

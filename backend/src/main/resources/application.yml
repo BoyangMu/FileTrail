@@ -1,0 +1,27 @@
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never
+  tomcat:
+    max-http-form-post-size: 5MB
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:file:./.data/metadata;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;WRITE_DELAY=0}
+    username: ${DATABASE_USER:sa}
+    password: ${DATABASE_PASSWORD:}
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      enabled: false
+filetrail:
+  storage: ${STORAGE:local}
+  data-dir: ${DATA_DIR:./.data/objects}
+  secure-cookie: ${SECURE_COOKIE:false}
+  worker: ${WORKER_ENABLED:true}
+  s3:
+    endpoint: ${S3_ENDPOINT:http://localhost:9000}
+    region: ${S3_REGION:us-east-1}
+    bucket: ${S3_BUCKET:filetrail}
+    access-key: ${S3_ACCESS_KEY:}
+    secret-key: ${S3_SECRET_KEY:}

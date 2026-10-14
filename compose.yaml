@@ -1,0 +1,85 @@
+name: filetrail
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: filetrail
+      POSTGRES_USER: filetrail
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run python3 scripts/configure.py first}
+    volumes: ['postgres-data:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U filetrail -d filetrail']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?Run python3 scripts/configure.py first}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?Run python3 scripts/configure.py first}
+    volumes: ['object-data:/data']
+    ports: ['127.0.0.1:9001:9001']
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  bucket-init:
+    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio: { condition: service_healthy }
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    entrypoint:
+      [
+        '/bin/sh',
+        '-c',
+        'mc alias set local http://minio:9000 "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" && mc mb --ignore-existing local/filetrail && mc anonymous set none local/filetrail',
+      ]
+  api:
+    build: ./backend
+    image: filetrail-api:local
+    environment: &api-env
+      DATABASE_URL: jdbc:postgresql://postgres:5432/filetrail
+      DATABASE_USER: filetrail
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      STORAGE: s3
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: filetrail
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      WORKER_ENABLED: 'false'
+      SECURE_COOKIE: ${SECURE_COOKIE:-false}
+    depends_on:
+      postgres: { condition: service_healthy }
+      bucket-init: { condition: service_completed_successfully }
+    ports: ['127.0.0.1:8081:8080']
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:8080/api/health']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+  worker:
+    image: filetrail-api:local
+    pull_policy: never
+    environment:
+      <<: *api-env
+      WORKER_ENABLED: 'true'
+      SPRING_MAIN_WEB_APPLICATION_TYPE: none
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+  web:
+    build: ./frontend
+    ports: ['127.0.0.1:${WEB_PORT:-4173}:80']
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+volumes:
+  postgres-data:
+  object-data:
