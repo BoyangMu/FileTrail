@@ -51,6 +51,16 @@ jobs:
             backend/target/surefire-reports/
             frontend/playwright-report/
             frontend/test-results/
+      - name: Show deployment diagnostics on failure
+        if: failure()
+        run: |
+          if [ -f .env ]; then
+            docker compose ps -a
+            docker compose logs --no-color --tail=200 api worker postgres minio
+          fi
       - name: Stop test stack
         if: always()
-        run: docker compose down
+        run: |
+          if [ -f .env ]; then
+            docker compose down
+          fi

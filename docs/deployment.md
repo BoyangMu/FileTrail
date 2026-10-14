@@ -8,6 +8,17 @@ Host bindings are loopback-only: web 4173, API 8081, MinIO console 9001. Named v
 
 `python3 scripts/configure.py` generates database/storage credentials using OS randomness and writes `.env` with mode 0600. Existing configuration is never overwritten. `.env.example` describes fields rather than supplying production defaults.
 
+### MinIO source builds
+
+Compose builds the local S3 server and bucket-initialization client from official source using [docker/minio/Dockerfile](../docker/minio/Dockerfile). The former Quay image references no longer allow anonymous pulls. No registry login is required for the replacement build.
+
+- Server: `minio/minio`, release `RELEASE.2025-09-07T16-13-09Z`, commit `01ce918d8279a20e4706b96a64396146894adee4`.
+- Client: `minio/mc`, release `RELEASE.2025-04-16T18-13-26Z`, commit `1e78af443bf0443eb177f26421fe081f08d83dc5`.
+
+These preserve the previous local test versions. The initial build downloads Go modules and compiles both binaries, so it takes longer than pulling prebuilt images; subsequent builds reuse Docker and Go caches. Go is provided by the builder image and does not need to be installed on the host. Database and object volumes are unchanged.
+
+Upstream source and AGPL-3.0 licenses: [MinIO server](https://github.com/minio/minio/tree/01ce918d8279a20e4706b96a64396146894adee4) and [MinIO client](https://github.com/minio/mc/tree/1e78af443bf0443eb177f26421fe081f08d83dc5). These pinned versions remain local compatibility fixtures; use maintained storage for public deployments.
+
 ## Configuration
 
 | Variable                                             | Purpose                                                  |

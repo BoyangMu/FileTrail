@@ -64,7 +64,7 @@ Every download was checked against SHA-256. These samples do not establish maxim
 
 ## Not verified or delivered
 
-- Remote CI execution: a workflow exists, but no remote run is recorded.
+- A fully passing remote CI run: the first inspected run passed backend, restart, and frontend checks but failed during storage-image retrieval (see below).
 - Public hosting, production domain, and TLS.
 - 4 GiB load tests, sustained traffic, large directories, or large object inventories.
 - Peak API memory, storage IOPS, or multi-device synchronization latency.
@@ -93,3 +93,24 @@ Generated test accounts and files are isolated from user-created workspaces.
 - Rebuilt the local Compose deployment. Strict TypeScript checks and production asset compilation passed during the image build.
 - All three Playwright tests passed against the updated Compose app, including checks for the document language and primary button color. Unicode filenames remain covered.
 - Inspected desktop login/workspace and mobile screenshots. Browser checks confirmed no horizontal overflow at 390 px width.
+
+## GitHub Actions storage-image failure — 2026-10-13 (Pacific)
+
+[Run 38501916685](https://github.com/BoyangMu/FileTrail/actions/runs/38501916685), commit `721f91a692c136bef0cbd8502e0280f6fc8af15d`:
+
+- Backend verification passed: 13 tests, zero failures/errors.
+- The isolated process-crash and completion-replay checks passed.
+- Frontend type checking and production build passed.
+- Compose failed pulling `quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z` with `unauthorized`. HTTP acceptance and browser tests were skipped, not passed.
+- Follow-up registry checks could not retrieve either configured MinIO image from Quay or Docker Hub. Existing local containers had cached images, which did not establish availability on a fresh runner.
+
+The replacement Compose configuration builds both tools from pinned official source commits; see [deployment details](deployment.md#minio-source-builds). A new remote run is required to confirm the complete GitHub workflow after this change.
+
+Local follow-up on macOS / Docker Linux arm64:
+
+- Built `filetrail-minio:local` and `filetrail-mc:local` from the pinned commits with Go 1.25.14; both builds succeeded without pulling upstream MinIO images.
+- Started an isolated `filetrail-ci-check` Compose project with fresh database/object volumes and separate host ports. Used the existing application images; application code was unchanged by this fix.
+- Storage health, bucket initialization, API readiness, and worker startup passed.
+- HTTP acceptance passed: resume, duplicate parts, idempotent publication, exact downloads, concurrent-update preservation, version restore, sharing/revocation, trash, and ownership checks.
+- Playwright: all three browser scenarios passed against the isolated stack, including resume after reload and mobile navigation.
+- This checks the replacement storage build and integration locally. It does not replace a new Linux amd64 GitHub Actions run or establish production storage suitability.
